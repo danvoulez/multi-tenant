@@ -1,8 +1,8 @@
-# Next.js Multi-tenant Starter Template
+# LogLineOS Multi-Tenant Next.js Template
 
-A minimalistic multi-tenant Next.js starter template with minimal setup and a modular design. Bring your own backend and database.
+A minimalistic multi-tenant Next.js starter template with LogLineOS authentication. Ledger-native auth with API Keys, Wallets, and Ed25519 signatures.
 
-[Demo](https://stack-template.vercel.app/)
+[Demo](https://multi-tenant.vercel.app/)
 
 ## Landing Page
 
@@ -33,7 +33,7 @@ A minimalistic multi-tenant Next.js starter template with minimal setup and a mo
 1. Clone the repository
 
     ```bash
-    git clone git@github.com:stack-auth/stack-template.git
+    git clone git@github.com:danvoulez/multi-tenant.git
     ```
 
 2. Install dependencies
@@ -42,9 +42,13 @@ A minimalistic multi-tenant Next.js starter template with minimal setup and a mo
     npm install
     ```
 
-3. Register an account on [Stack Auth](https://stack-auth.com), copy the keys from the dashboard, and paste them into the `.env.local` file. Then, enable "client team creation" on the team settings tab.
+3. Configure LogLineOS API endpoint in `.env.local`:
 
-    If you want to learn more about Stack Auth or self-host it, check out the [Docs](https://docs.stack-auth.com) and [GitHub](https://github.com/stack-auth/stack).
+    ```env
+    NEXT_PUBLIC_LOGLINE_API_URL=http://localhost:3001
+    ```
+
+    **LogLineOS** uses ledger-native authentication with API Keys and Wallets. No passwords required - everything is signed with Ed25519 and recorded as immutable spans in the ledger.
 
 4. Start the development server and go to [http://localhost:3000](http://localhost:3000)
 
@@ -52,16 +56,44 @@ A minimalistic multi-tenant Next.js starter template with minimal setup and a mo
     npm run dev 
     ```
 
+## Authentication
+
+This template uses **LogLineOS** - a ledger-based authentication system where:
+
+- **API Keys** (`Authorization: ApiKey tok_live_...`) authenticate requests
+- **Wallets** securely store cryptographic keys and credentials
+- **All mutations** are signed with Ed25519 before entering the ledger
+- **Multi-tenancy** is built-in with tenant isolation via PostgreSQL RLS
+- **Everything is auditable** - every operation is a versioned span
+
+### How It Works
+
+1. Users authenticate with API Keys
+2. Each key is linked to a Wallet with cryptographic keys
+3. Wallets sign all mutations (Ed25519 + BLAKE3)
+4. Tenant isolation is enforced at the database level
+5. All operations are immutable spans in the ledger
+
 ## Features & Tech Stack
 
 - Next.js 14 app router
 - TypeScript
 - Tailwind & Shadcn UI
-- Stack Auth
-- Multi-tenancy (teams/orgs)
+- LogLineOS Authentication (Ledger-native, API Keys, Wallets, Ed25519)
+- Multi-tenancy (teams/orgs) with tenant isolation
 - Dark mode
+
+## LogLineOS Features
+
+- **Ledger-Only**: All logic as versioned spans in PostgreSQL
+- **No Passwords**: API Key authentication with cryptographic wallets
+- **Immutable & Auditable**: Every operation is a signed span
+- **Multi-Tenant by Design**: Row-Level Security ensures tenant isolation
+- **Serverless-First**: Stateless REST APIs
+- **Cryptographically Signed**: Ed25519 + BLAKE3 signatures on all mutations
 
 ## Inspired by
 
 - [Shadcn UI](https://github.com/shadcn-ui/ui)
 - [Shadcn Taxonomy](https://github.com/shadcn-ui/taxonomy)
+- [LogLineOS](https://github.com/danvoulez/loglineos)

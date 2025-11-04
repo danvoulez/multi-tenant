@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { useStackApp, useUser } from "@stackframe/stack";
+import { useAuth } from "./auth-provider";
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
 import { useSelectedLayoutSegment } from "next/navigation";
@@ -20,18 +20,17 @@ interface NavProps {
 }
 
 function SignInSignUpButtons() {
-  const app = useStackApp();
   return (
     <>
       <Link
-        href={app.urls.signIn}
+        href="/auth/login"
         className={buttonVariants({ variant: "secondary" })}
       >
         Sign In
       </Link>
 
       <Link
-        href={app.urls.signUp}
+        href="/auth/signup"
         className={buttonVariants({ variant: "default" })}
       >
         Sign Up
@@ -41,9 +40,9 @@ function SignInSignUpButtons() {
 }
 
 function AuthButtonsInner() {
-  const user = useUser();
+  const { isAuthenticated } = useAuth();
 
-  if (user) {
+  if (isAuthenticated) {
     return (
       <Link
         href="/dashboard"

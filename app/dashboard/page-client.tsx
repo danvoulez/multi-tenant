@@ -4,20 +4,39 @@ import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@radix-ui/react-label";
-import { useUser } from "@stackframe/stack";
+import { useAuth } from "@/components/auth-provider";
 import { useRouter } from "next/navigation";
+import { getUserTeams } from "@/lib/auth";
 
 export function PageClient() {
   const router = useRouter();
-  const user = useUser({ or: "redirect" });
-  const teams = user.useTeams();
-  const [teamDisplayName, setTeamDisplayName] = React.useState("");
+  const { wallet, apiKey } = useAuth();
+  const [teams, setTeams] = React.useState<any[]>([]);
+  const [teamName, setTeamName] = React.useState("");
+  const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
-    if (teams.length > 0 && !user.selectedTeam) {
-      user.setSelectedTeam(teams[0]);
+    async function loadTeams() {
+      if (!apiKey) return;
+      const fetchedTeams = await getUserTeams(apiKey);
+      setTeams(fetchedTeams);
+      setLoading(false);
+      
+      // Redirect to first team if available
+      if (fetchedTeams.length > 0) {
+        router.push(`/dashboard/${fetchedTeams[0].tenant_id}`);
+      }
     }
-  }, [teams, user]);
+    loadTeams();
+  }, [apiKey, router]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen w-screen">
+        <p>Loading...</p>
+      </div>
+    );
+  }
 
   if (teams.length === 0) {
     return (
@@ -29,17 +48,18 @@ export function PageClient() {
           </p>
           <form
             className="mt-4"
-            onSubmit={(e) => {
+            onSubmit={async (e) => {
               e.preventDefault();
-              user.createTeam({ displayName: teamDisplayName });
+              // TODO: Implement team creation via LogLineOS API
+              console.log("Creating team:", teamName);
             }}
           >
             <div>
               <Label className="text-sm">Team name</Label>
               <Input
                 placeholder="Team name"
-                value={teamDisplayName}
-                onChange={(e) => setTeamDisplayName(e.target.value)}
+                value={teamName}
+                onChange={(e) => setTeamName(e.target.value)}
               />
             </div>
             <Button className="mt-4 w-full">Create team</Button>
@@ -47,8 +67,6 @@ export function PageClient() {
         </div>
       </div>
     );
-  } else if (user.selectedTeam) {
-    router.push(`/dashboard/${user.selectedTeam.id}`);
   }
 
   return null;
