@@ -77,7 +77,7 @@ export default function AuthPage() {
               <div className="rounded-md bg-muted p-4 text-sm">
                 <p className="font-medium mb-2">New user?</p>
                 <p className="text-muted-foreground">
-                  You'll receive your API key in the email. Save it securely!
+                  You&apos;ll receive your API key in the email. Save it securely!
                 </p>
               </div>
 
@@ -98,7 +98,7 @@ export default function AuthPage() {
 
           <div className="text-center text-xs text-muted-foreground">
             <p>
-              Didn't receive the email?{" "}
+              Didn&apos;t receive the email?{" "}
               <button
                 onClick={handleSubmit}
                 className="underline hover:text-foreground"
@@ -136,7 +136,7 @@ export default function AuthPage() {
                 autoFocus
               />
               <p className="text-xs text-muted-foreground">
-                We'll send you a magic link to sign in
+                We&apos;ll send you a magic link to sign in
               </p>
             </div>
 
