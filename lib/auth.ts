@@ -1,7 +1,13 @@
 /**
  * LogLineOS Auth Integration
  * Ledger-native authentication with API Keys, Wallets, and Ed25519 signatures
+ * 
+ * Constitutional Compliance:
+ * - §9 Constitutional Invariants: clock_present, who_required, traceability
+ * - §13 Idempotency & Trace: trace_id, idempotency_key
  */
+
+import { createIdempotencyKey, createTraceId, getCurrentClock } from "./governance/span";
 
 export interface WalletContext {
   wallet_id: string;
@@ -18,11 +24,39 @@ export interface AuthSession {
 }
 
 /**
+ * Span data with constitutional requirements.
+ * 
+ * §9: MUST include clock.ts, clock.tz, who.id, who.role
+ * §13: MUST include trace_id, idempotency_key
+ */
+export interface ConstitutionalSpan {
+  tenant_id: string;
+  app: string;
+  resource: {
+    type: string;
+    id: string;
+    [key: string]: any;
+  };
+  who: {
+    id: string;
+    role: string;
+  };
+  clock: {
+    ts: string;
+    tz: string;
+  };
+  trace_id: string;
+  idempotency_key: string;
+  [key: string]: any;
+}
+
+/**
  * Validate API Key with LogLineOS
  */
 export async function validateApiKey(apiKey: string): Promise<WalletContext | null> {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_LOGLINE_API_URL}/auth/validate`, {
+    const apiUrl = process.env.NEXT_PUBLIC_LOGLINE_API_URL || "";
+    const response = await fetch(`${apiUrl}/auth/validate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -50,19 +84,39 @@ export async function validateApiKey(apiKey: string): Promise<WalletContext | nu
 
 /**
  * Sign a span with the Wallet (Ed25519 + BLAKE3)
+ * 
+ * Now includes constitutional requirements automatically:
+ * - §9: clock.ts, clock.tz (from getCurrentClock)
+ * - §13: trace_id, idempotency_key
  */
 export async function signSpan(
   apiKey: string,
-  spanData: Record<string, any>
+  spanData: Partial<ConstitutionalSpan>,
+  timezone: string = "Europe/Paris"
 ): Promise<{ signature: string; span_id: string } | null> {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_LOGLINE_API_URL}/wallet/sign.span`, {
+    // §13: Add trace_id and idempotency_key if missing
+    const trace_id = spanData.trace_id || createTraceId();
+    const idempotency_key = spanData.idempotency_key || createIdempotencyKey();
+    
+    // §9: Add clock if missing
+    const clock = spanData.clock || getCurrentClock(timezone);
+    
+    const constitutionalSpan: ConstitutionalSpan = {
+      ...spanData,
+      trace_id,
+      idempotency_key,
+      clock,
+    } as ConstitutionalSpan;
+
+    const apiUrl = process.env.NEXT_PUBLIC_LOGLINE_API_URL || "";
+    const response = await fetch(`${apiUrl}/wallet/sign.span`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `ApiKey ${apiKey}`
       },
-      body: JSON.stringify(spanData)
+      body: JSON.stringify(constitutionalSpan)
     });
 
     if (!response.ok) {
@@ -142,7 +196,8 @@ export async function getUserTeams(apiKey: string): Promise<Array<{
   role: string;
 }>> {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_LOGLINE_API_URL}/tenants`, {
+    const apiUrl = process.env.NEXT_PUBLIC_LOGLINE_API_URL || "";
+    const response = await fetch(`${apiUrl}/tenants`, {
       headers: {
         'Authorization': `ApiKey ${apiKey}`
       }

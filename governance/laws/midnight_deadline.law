@@ -1,0 +1,25 @@
+# LogLine Midnight Deadline Law v1.0.0
+#
+# This is the normative law from §6 of the LogLine Constitution v1.1.
+# It governs deliverable acceptance based on deadlines, approvals, and evidence.
+#
+# Constitutional References:
+# - §6: Midnight Ruler — Normative Law
+# - §8: Execution Model (daily at 00:00:00)
+# - §9: Constitutional Invariants (quorum_for_accept)
+
+law midnight_deadline:1.0.0:
+  scope: deliverable
+  clock: midnight Europe/Paris
+
+  # §6: If accepted OR quorum reached → ACCEPT
+  if ok: accepted == true OR approvals.count >= quorum
+  then: accept, tag(key=status,val=accepted), append_ledger
+
+  # §6: If deadline passed but evidence missing → HOLD for ops review
+  if doubt: now >= deadline_at AND accepted == false AND evidence.missing == true
+  then: hold(hours=24), notify(role=ops), tag(key=status,val=under_review), append_ledger
+
+  # §6: If deadline passed and not accepted → TERMINATE
+  if not: now >= deadline_at AND accepted == false
+  then: terminate(reason=deadline_passed), tag(key=status,val=terminated), append_ledger
