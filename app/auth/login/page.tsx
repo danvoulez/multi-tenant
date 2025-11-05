@@ -19,6 +19,11 @@ export default function AuthPage() {
 
     try {
       // Call LogLineOS magic link API
+      // Expected backend behavior:
+      // 1. Check if email exists in identity_registration spans
+      // 2. New user → Create wallet, generate API key, send activation email
+      // 3. Existing user → Generate temporary nonce, send magic link
+      // 4. Email template should include callback URL with token
       const response = await fetch(`${process.env.NEXT_PUBLIC_LOGLINE_API_URL}/auth/magic-link`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -29,6 +34,7 @@ export default function AuthPage() {
         throw new Error('Failed to send magic link');
       }
 
+      // Expected response: { "ok": true, "email_sent": true }
       setSent(true);
     } catch (err) {
       setError("Failed to send magic link. Please try again.");

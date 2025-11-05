@@ -25,6 +25,11 @@ export default function MagicLinkCallbackPage() {
     async function verifyMagicLink() {
       try {
         // Verify magic link token with LogLineOS
+        // Expected backend behavior:
+        // 1. Validate token (check expiry, not used before)
+        // 2. If new user activation → return wallet info + api_key
+        // 3. If existing user → return temporary session token or api_key
+        // 4. Mark token as used (prevent replay)
         const response = await fetch(
           `${process.env.NEXT_PUBLIC_LOGLINE_API_URL}/auth/magic-link/verify`,
           {
@@ -39,6 +44,18 @@ export default function MagicLinkCallbackPage() {
         }
 
         const data = await response.json();
+        // Expected response:
+        // {
+        //   "ok": true,
+        //   "api_key": "tok_live_...",  // for new users or in URL param
+        //   "wallet": {
+        //     "wallet_id": "wlt_tenant_user",
+        //     "tenant_id": "tenant",
+        //     "scopes": ["wallet.open", "span.sign"],
+        //     "display_name": "User Name",
+        //     "email": "user@example.com"
+        //   }
+        // }
 
         // If this is a new user, they'll have an API key in the URL
         const finalApiKey = apiKey || data.api_key;
