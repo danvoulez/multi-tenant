@@ -1,8 +1,19 @@
 # LogLineOS Multi-Tenant Next.js Template
 
-A minimalistic multi-tenant Next.js starter template with LogLineOS authentication. Ledger-native auth with API Keys, Wallets, and Ed25519 signatures.
+A minimalistic multi-tenant Next.js starter template with LogLineOS authentication. Ledger-native auth with Ed25519 signatures, magic links, and cryptographic wallets.
 
 [Demo](https://multi-tenant.vercel.app/)
+
+## 🔐 Authentication Flow
+
+This template implements LogLineOS's **zero-password** authentication:
+
+1. **Magic Link** - User enters email, receives signed link
+2. **Key Attestation** - Proves control of Ed25519 private key
+3. **Wallet Creation** - Cryptographic wallet with secure key storage
+4. **Token Issuance** - API key for authenticated requests
+
+All operations are recorded as **immutable, signed spans** in the ledger.
 
 ## Landing Page
 
@@ -58,21 +69,40 @@ A minimalistic multi-tenant Next.js starter template with LogLineOS authenticati
 
 ## Authentication
 
-This template uses **LogLineOS** - a ledger-based authentication system where:
+This template implements **LogLineOS magic link authentication**:
 
-- **API Keys** (`Authorization: ApiKey tok_live_...`) authenticate requests
-- **Wallets** securely store cryptographic keys and credentials
-- **All mutations** are signed with Ed25519 before entering the ledger
-- **Multi-tenancy** is built-in with tenant isolation via PostgreSQL RLS
-- **Everything is auditable** - every operation is a versioned span
+### 🎯 Authentication Pages
 
-### How It Works
+- **`/auth/login`** - Magic link (email only, no password)
+- **`/auth/callback`** - Magic link verification & auto-login
+- **`/auth/api-key`** - Direct API key login (fallback)
 
-1. Users authenticate with API Keys
-2. Each key is linked to a Wallet with cryptographic keys
-3. Wallets sign all mutations (Ed25519 + BLAKE3)
-4. Tenant isolation is enforced at the database level
-5. All operations are immutable spans in the ledger
+### How Magic Links Work
+
+1. **User enters email** → System checks if registered
+2. **New user** → Email with API key + activation link
+3. **Existing user** → Email with temporary magic link (15 min)
+4. **Click link** → Auto-login → Dashboard
+
+### LogLineOS Security
+
+- **API Keys** (`tok_live_...`) for authenticated requests
+- **Ed25519 Wallets** - Keys stored in AWS Secrets Manager
+- **Key Attestation** - Proves control of private key via nonce signing
+- **Signed Spans** - All mutations signed (Ed25519 + BLAKE3)
+- **Tenant Isolation** - PostgreSQL Row-Level Security
+- **Immutable Ledger** - Complete audit trail
+
+### Authentication Flow
+
+```
+User Email → Magic Link → Key Attestation → Wallet Created → Token Issued
+     ↓            ↓              ↓                ↓              ↓
+  identity    nonce sign    proof of key     secure storage   API Key
+registration   (Ed25519)     ownership        (Secrets Mgr)   (tok_live_...)
+```
+
+All steps recorded as **signed, immutable spans** in the ledger.
 
 ## Features & Tech Stack
 
